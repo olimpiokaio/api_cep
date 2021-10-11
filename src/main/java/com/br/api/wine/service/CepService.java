@@ -27,13 +27,18 @@ public class CepService {
 
     public CepDto salvar(CepForm cepForm) {
         if (cepForm.getFaixaFim() > cepForm.getFaixaInicio()) {
+
             boolean faixaInicio = this.faixaJaRelacinada(cepForm.getFaixaInicio());
             boolean faixaFim = this.faixaJaRelacinada(cepForm.getFaixaFim());
 
             if (!(faixaInicio || faixaFim)) {
-                Cep cep = CepForm.converter(cepForm);
-                Cep cepCadastrado = cepRepository.save(cep);
-                return new CepDto(cepCadastrado);
+                Pageable paginacao = PageRequest.of(0, 1);
+                List<Cep> list = cepRepository.buscarCepIntermediario(cepForm.getFaixaInicio(), cepForm.getFaixaFim(), paginacao);
+                if(!(list != null && list.size() > 0)) {
+                    Cep cep = CepForm.converter(cepForm);
+                    Cep cepCadastrado = cepRepository.save(cep);
+                    return new CepDto(cepCadastrado);
+                }
             }
         }
         throw new IllegalArgumentException("Faixas de CEP já relacionadas");
@@ -44,15 +49,31 @@ public class CepService {
 
         if (optional.isPresent() && cepForm.getFaixaFim() > cepForm.getFaixaInicio()) {
             Cep cep = optional.get();
+
             boolean faixaInicio = this.podeAtualizarFaixa(cep.getId(), cepForm.getFaixaInicio());
             boolean faixaFim = this.podeAtualizarFaixa(cep.getId(), cepForm.getFaixaFim());
+
+//            if (faixaInicio && faixaFim) {
+//                cep.setFaixaInicio(cepForm.getFaixaInicio());
+//                cep.setFaixaFim(cepForm.getFaixaFim());
+//                cep.setCodigoLoja(cepForm.getCodigoLoja());
+//                cepRepository.save(cep);
+//                return new CepDto(cep);
+//            }
+
             if (faixaInicio && faixaFim) {
-                cep.setFaixaInicio(cepForm.getFaixaInicio());
-                cep.setFaixaFim(cepForm.getFaixaFim());
-                cep.setCodigoLoja(cepForm.getCodigoLoja());
-                cepRepository.save(cep);
-                return new CepDto(cep);
+                System.out.println("Passou");
+                Pageable paginacao = PageRequest.of(0, 1);
+                List<Cep> list = cepRepository.buscarCepIntermediarioComExecao(cepForm.getFaixaInicio(), cepForm.getFaixaFim(), cep.getId(), paginacao);
+                if(!(list != null && list.size() > 0)) {
+                    cep.setFaixaInicio(cepForm.getFaixaInicio());
+                    cep.setFaixaFim(cepForm.getFaixaFim());
+                    cep.setCodigoLoja(cepForm.getCodigoLoja());
+                    cepRepository.save(cep);
+                    return new CepDto(cep);
+                }
             }
+
         }
         throw new IllegalArgumentException("Faixas de CEP já relacionadas");
     }
@@ -75,6 +96,15 @@ public class CepService {
         return null;
     }
 
+    private Cep buscarPrimeiroCep() {
+        Pageable paginacao = PageRequest.of(0, 1, Sort.Direction.ASC, "faixaInicio");
+        List<Cep> cepLista = cepRepository.buscarPrimeiroCep(paginacao);
+        if (cepLista != null && cepLista.size() > 0) {
+            return cepLista.get(0);
+        }
+        return null;
+    }
+
     private boolean faixaJaRelacinada(long faixa) {
         Cep cep = this.buscarPorFaixaInicial(faixa);
         if (cep != null && (cep.getFaixaFim() >= faixa)) {
@@ -83,6 +113,22 @@ public class CepService {
             return false;
         }
     }
+
+//    private boolean faixaFimJaRelacinada(long faixa) {
+//        Cep cep = this.buscarPorFaixaInicial(faixa);
+//        if (cep == null) {
+//            return false;
+//        }
+//        if (cep.getFaixaFim() >= faixa) {
+//            return true;
+//        } else {
+//            Cep primeiroCep = this.buscarPrimeiroCep();
+//            if (faixa < primeiroCep.getFaixaInicio()) {
+//                return false;
+//            }
+//            return true;
+//        }
+//    }
 
     public void remover(Long id) {
         Optional<Cep> optional = cepRepository.findById(id);
