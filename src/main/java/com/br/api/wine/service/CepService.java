@@ -53,14 +53,6 @@ public class CepService {
             boolean faixaInicio = this.podeAtualizarFaixa(cep.getId(), cepForm.getFaixaInicio());
             boolean faixaFim = this.podeAtualizarFaixa(cep.getId(), cepForm.getFaixaFim());
 
-//            if (faixaInicio && faixaFim) {
-//                cep.setFaixaInicio(cepForm.getFaixaInicio());
-//                cep.setFaixaFim(cepForm.getFaixaFim());
-//                cep.setCodigoLoja(cepForm.getCodigoLoja());
-//                cepRepository.save(cep);
-//                return new CepDto(cep);
-//            }
-
             if (faixaInicio && faixaFim) {
                 System.out.println("Passou");
                 Pageable paginacao = PageRequest.of(0, 1);
@@ -113,22 +105,6 @@ public class CepService {
             return false;
         }
     }
-
-//    private boolean faixaFimJaRelacinada(long faixa) {
-//        Cep cep = this.buscarPorFaixaInicial(faixa);
-//        if (cep == null) {
-//            return false;
-//        }
-//        if (cep.getFaixaFim() >= faixa) {
-//            return true;
-//        } else {
-//            Cep primeiroCep = this.buscarPrimeiroCep();
-//            if (faixa < primeiroCep.getFaixaInicio()) {
-//                return false;
-//            }
-//            return true;
-//        }
-//    }
 
     public void remover(Long id) {
         Optional<Cep> optional = cepRepository.findById(id);
